@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>P2P WhatsApp Clone - Enhanced Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #075E54; /* WhatsApp green */
+      --secondary-color: #25D366; /* WhatsApp light green */
+      --chat-header-bg: #075E54;
+      --chat-bg: #ECE5DD; /* WhatsApp chat background */
+      --sent-msg-bg: #DCF8C6;
+      --received-msg-bg: #FFFFFF;
+      --font-family: 'Roboto', sans-serif;
+      --shadow-light: rgba(0,0,0,0.1);
+      --read-color: #4FC3F7; /* Blue for read ticks */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: var(--font-family);
+      background: #ECE5DD;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px var(--shadow-light);
+      background: var(--chat-bg);
+    }
+
+    header {
+      background: var(--chat-header-bg);
+      color: white;
+      padding: 12px 16px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header .contact-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header .contact-info i {
+      font-size: 1.5rem;
+    }
+
+    main {
+      flex-grow: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Connection panel */
+    #connectionPanel {
+      width: 320px;
+      background: #FFFFFF;
+      border-right: 1px solid #D1D7DB;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #connectionPanel h2 {
+      margin: 0 0 12px;
+      font-weight: 500;
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+
+    #connectionPanel button {
+      margin-top: 10px;
+      background-color: var(--secondary-color);
+      border: none;
+      color: white;
+      border-radius: 20px;
+      padding: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #connectionPanel button:hover:not(:disabled) {
+      background-color: #128C7E;
+    }
+
+    #connectionPanel textarea {
+      width: 100%;
+      height: 80px;
+      padding: 8px;
+      margin-top: 8px;
+      border-radius: 6px;
+      border: 1px solid #D1D7DB;
+      resize: none;
+      font-family: var(--font-family);
+      font-size: 0.9rem;
+    }
+
+    #connectionPanel label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 8px;
+      color: #3D4457;
+    }
+
+    /* Chat panel */
+    #chatPanel {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      height: 60px;
+      background: var(--chat-header-bg);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      color: white;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .chat-header .contact-name {
+      flex-grow: 1;
+    }
+
+    .chat-header .header-icons i {
+      margin-left: 16px;
+      cursor: pointer;
+    }
+
+    #messages {
+      flex-grow: 1;
+      padding: 10px 16px;
+      overflow-y: auto;
+      background: var(--chat-bg);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 8px 12px;
+      border-radius: 7.5px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-break: break-word;
+      position: relative;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      background-color: var(--sent-msg-bg);
+      border-bottom-right-radius: 2px;
+    }
+
+    .message.sent::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: -8px;
+      border: 4px solid transparent;
+      border-bottom-color: var(--sent-msg-bg);
+      border-left-color: var(--sent-msg-bg);
+    }
+
+    .message.received {
+      align-self: flex-start;
+      background-color: var(--received-msg-bg);
+      border-bottom-left-radius: 2px;
+    }
+
+    .message.received::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -8px;
+      border: 4px solid transparent;
+      border-bottom-color: var(--received-msg-bg);
+      border-right-color: var(--received-msg-bg);
+    }
+
+    .message img, .message video, .message audio {
+      max-width: 100%;
+      border-radius: 7.5px;
+    }
+
+    .timestamp {
+      font-size: 0.65rem;
+      color: #667781;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .status {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 0.65rem;
+      color: #667781;
+    }
+
+    .status.delivered::after { content: '✓'; }
+    .status.seen::after { content: '✓✓'; }
+    .status.read::after { content: '✓✓'; color: var(--read-color); }
+
+    .message-actions {
+      display: none;
+      position: absolute;
+      top: -30px;
+      right: 10px;
+      background: #FFFFFF;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 4px;
+      gap: 4px;
+      z-index: 10;
+      flex-wrap: wrap;
+    }
+
+    .message:hover .message-actions {
+      display: flex;
+    }
+
+    .message-actions button {
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--primary-color);
+    }
+
+    .message-actions button:hover {
+      color: var(--secondary-color);
+    }
+
+    .starred {
+      background-color: #FFF8B7;
+    }
+
+    .pinned {
+      border: 1px solid var(--secondary-color);
+    }
+
+    .reply-context {
+      background: #F0F0F0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+      border-left: 3px solid var(--secondary-color);
+    }
+
+    .reaction {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      color: #667781;
+    }
+
+    .input-area {
+      background: #F0F0F0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid #D1D7DB;
+    }
+
+    .input-area textarea {
+      flex-grow: 1;
+      min-height: 36px;
+      max-height: 100px;
+      resize: none;
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+      border-radius: 18px;
+      padding: 8px 12px;
+      border: none;
+      outline: none;
+      background: #FFFFFF;
+    }
+
+    .input-area textarea::placeholder {
+      color: #8696A0;
+    }
+
+    .input-area button#sendBtn {
+      background-color: var(--secondary-color);
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .input-area button#sendBtn:disabled {
+      background-color: #B0BEC5;
+      cursor: not-allowed;
+    }
+
+    .input-area button#sendBtn:hover:not(:disabled) {
+      background-color: #128C7E;
+    }
+
+    #fileInputLabel, #emojiBtn {
+      cursor: pointer;
+      color: #667781;
+      font-size: 1.3rem;
+      padding: 8px;
+    }
+
+    #fileInputLabel:hover, #emojiBtn:hover {
+      color: var(--secondary-color);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    #info {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--primary-color);
+      height: 1.4em;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #messages::-webkit-scrollbar, #connectionPanel textarea::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #messages::-webkit-scrollbar-thumb, #connectionPanel textarea::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,0.2);
+      border-radius: 6px;
+    }
+
+    #messages::-webkit-scrollbar-track, #connectionPanel textarea::-webkit-scrollbar-track {
+      background-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" role="application" aria-label="P2P WhatsApp Clone Chat Application">
+    <header>
+      <div class="contact-info">
+        <i class="fas fa-user"></i>
+        <span>P2P WhatsApp Clone</span>
+      </div>
+      <div class="header-icons">
+        <i class="fas fa-search" title="Search"></i>
+        <i class="fas fa-ellipsis-v" title="More options"></i>
+      </div>
+    </header>
+    <main>
+      <section id="connectionPanel" aria-label="Connection panel for signaling">
+        <h2>Connection Setup</h2>
+        <button id="createOfferBtn" aria-label="Create Connection Offer">Create Offer</button>
+        <label for="localSDP">Local SDP (copy to peer):</label>
+        <textarea id="localSDP" readonly aria-readonly="true" placeholder="Your SDP will appear here"></textarea>
+        <label for="remoteSDP">Paste Remote SDP below:</label>
+        <textarea id="remoteSDP" aria-label="Paste remote SDP here"></textarea>
+        <button id="acceptOfferBtn" aria-label="Accept Remote SDP">Accept Remote SDP</button>
+        <div id="info" role="status" aria-live="polite"></div>
+      </section>
+      <section id="chatPanel" aria-label="Chat panel" hidden>
+        <div class="chat-header">
+          <span class="contact-name">Peer Chat</span>
+          <div class="header-icons">
+            <i class="fas fa-video" title="Video call"></i>
+            <i class="fas fa-phone" title="Voice call"></i>
+            <i class="fas fa-ellipsis-v" title="More options"></i>
+          </div>
+        </div>
+        <div id="messages" aria-label="Messages area" role="log" aria-live="polite" aria-atomic="false" tabindex="0"></div>
+        <form id="chatForm" class="input-area" aria-label="Message input form">
+          <i id="emojiBtn" class="fas fa-smile" title="Emoji"></i>
+          <label id="fileInputLabel" for="fileInput" title="Send Image/Video/Audio" class="fas fa-paperclip"></label>
+          <input type="file" id="fileInput" accept="image/*,video/*,audio/*" multiple aria-label="Choose image, video, or audio files to send" />
+          <textarea id="messageInput" rows="1" placeholder="Type a message" aria-label="Message input"></textarea>
+          <button type="submit" id="sendBtn" aria-label="Send message" disabled><i class="fas fa-paper-plane"></i></button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Peer connection and data channel variables
+    let pc = null;
+    let dc = null;
+    let isOfferer = false;
+    let messages = new Map(); // Store message metadata
+    let pinnedMessages = new Set();
+    let starredMessages = new Set();
+    let replyToMessageId = null;
+
+    const config = {
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    };
+
+    // DOM Elements
+    const createOfferBtn = document.getElementById('createOfferBtn');
+    const acceptOfferBtn = document.getElementById('acceptOfferBtn');
+    const localSDPTextarea = document.getElementById('localSDP');
+    const remoteSDPTextarea = document.getElementById('remoteSDP');
+    const infoDiv = document.getElementById('info');
+    const chatPanel = document.getElementById('chatPanel');
+    const messagesDiv = document.getElementById('messages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const fileInput = document.getElementById('fileInput');
+    const emojiBtn = document.getElementById('emojiBtn');
+
+    // Generate unique message ID
+    function generateMessageId() {
+      return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    // Append message to chat
+    function appendMessage(text, fromMe, isMedia = false, mediaType = '', src = '', messageId, status = 'delivered', replyTo = null, reaction = '') {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${fromMe ? 'sent' : 'received'}${pinnedMessages.has(messageId) ? ' pinned' : ''}${starredMessages.has(messageId) ? ' starred' : ''}`;
+      msgDiv.dataset.messageId = messageId;
+
+      if (replyTo && messages.has(replyTo)) {
+        const replyContext = document.createElement('div');
+        replyContext.className = 'reply-context';
+        replyContext.textContent = messages.get(replyTo).text || 'Media';
+        msgDiv.appendChild(replyContext);
+      }
+
+      if (isMedia) {
+        let mediaEl;
+        if (mediaType.startsWith('image/')) {
+          mediaEl = document.createElement('img');
+          mediaEl.src = src;
+          mediaEl.alt = text || 'Shared image';
+        } else if (mediaType.startsWith('video/')) {
+          mediaEl = document.createElement('video');
+          mediaEl.src = src;
+          mediaEl.controls = true;
+          mediaEl.autoplay = false;
+          mediaEl.title = text || 'Shared video';
+        } else if (mediaType.startsWith('audio/')) {
+          mediaEl = document.createElement('audio');
+          mediaEl.src = src;
+          mediaEl.controls = true;
+          mediaEl.title = text || 'Shared audio';
+        }
+        if (mediaEl) {
+          msgDiv.appendChild(mediaEl);
+        } else {
+          msgDiv.textContent = text;
+        }
+      } else {
+        msgDiv.textContent = text;
+      }
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'timestamp';
+      timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      msgDiv.appendChild(timeDiv);
+
+      if (fromMe) {
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `status ${status}`;
+        msgDiv.appendChild(statusDiv);
+      }
+
+      if (reaction) {
+        const reactionDiv = document.createElement('div');
+        reactionDiv.className = 'reaction';
+        reactionDiv.textContent = reaction;
+        msgDiv.appendChild(reactionDiv);
+      }
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'message-actions';
+      actionsDiv.innerHTML = `
+        <button class="reply-btn" title="Reply"><i class="fas fa-reply"></i></button>
+        <button class="react-btn" title="React"><i class="fas fa-smile"></i></button>
+        <button class="star-btn" title="${starredMessages.has(messageId) ? 'Unstar' : 'Star'}"><i class="fas fa-star"></i></button>
+        <button class="pin-btn" title="${pinnedMessages.has(messageId) ? 'Unpin' : 'Pin'}"><i class="fas fa-thumbtack"></i></button>
+        <button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button>
+        ${fromMe ? '<button class="edit-btn" title="Edit"><i class="fas fa-edit"></i></button>' : ''}
+      `;
+      msgDiv.appendChild(actionsDiv);
+
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      messages.set(messageId, { text, fromMe, isMedia, mediaType, src, status, replyTo, reaction });
+      return msgDiv;
+    }
+
+    // Update message status
+    function updateMessageStatus(messageId, status) {
+      if (messages.has(messageId)) {
+        messages.get(messageId).status = status;
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
+        if (msgDiv) {
+          const statusDiv = msgDiv.querySelector('.status');
+          if (statusDiv) {
+            statusDiv.className = `status ${status}`;
+          }
+        }
+      }
+    }
+
+    // Edit message
+    function editMessage(messageId, newText) {
+      if (messages.has(messageId) && !messages.get(messageId).isMedia) {
+        messages.get(messageId).text = newText;
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
+        if (msgDiv) {
+          const textNode = msgDiv.childNodes[0].nodeType === 3 ? msgDiv.childNodes[0] : msgDiv.querySelector('.reply-context + *');
+          if (textNode) textNode.textContent = newText;
+        }
+      }
+    }
+
+    // Add reaction
+    function addReaction(messageId, reaction) {
+      if (messages.has(messageId)) {
+        messages.get(messageId).reaction = reaction;
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
+        if (msgDiv) {
+          let reactionDiv = msgDiv.querySelector('.reaction');
+          if (!reactionDiv) {
+            reactionDiv = document.createElement('div');
+            reactionDiv.className = 'reaction';
+            msgDiv.insertBefore(reactionDiv, msgDiv.querySelector('.message-actions'));
+          }
+          reactionDiv.textContent = reaction;
+        }
+      }
+    }
+
+    // Display info status
+    function setInfo(text, isError = false) {
+      infoDiv.textContent = text;
+      infoDiv.style.color = isError ? '#D32F2F' : 'var(--primary-color)';
+    }
+
+    // Create peer connection
+    function createPeerConnection() {
+      try {
+        pc = new RTCPeerConnection(config);
+
+        pc.onicecandidate = e => {
+          if (e.candidate === null) {
+            localSDPTextarea.value = JSON.stringify(pc.localDescription);
+            setInfo('ICE gathering complete. Copy your SDP and share with peer.');
+          }
+        };
+
+        pc.onconnectionstatechange = () => {
+          if (pc.connectionState === 'connected') {
+            setInfo('Peer connected! Chat enabled.');
+            chatPanel.hidden = false;
+            createOfferBtn.disabled = true;
+            acceptOfferBtn.disabled = true;
+            remoteSDPTextarea.disabled = true;
+            localSDPTextarea.disabled = true;
+          } else if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+            setInfo('Peer disconnected or connection closed. Refresh to reconnect.', true);
+            chatPanel.hidden = true;
+            createOfferBtn.disabled = false;
+            acceptOfferBtn.disabled = false;
+            remoteSDPTextarea.disabled = false;
+            localSDPTextarea.disabled = false;
+            sendBtn.disabled = true;
+            messageInput.disabled = true;
+            fileInput.disabled = true;
+          }
+        };
+
+        if (!isOfferer) {
+          pc.ondatachannel = e => {
+            dc = e.channel;
+            setupDataChannel();
+          };
+        }
+      } catch (err) {
+        setInfo('Error creating peer connection: ' + err.message, true);
+      }
+    }
+
+    // Setup data channel
+    function setupDataChannel() {
+      dc.onopen = () => {
+        setInfo('Data channel open. You can chat now!');
+        sendBtn.disabled = false;
+        messageInput.disabled = false;
+        fileInput.disabled = false;
+        messageInput.focus();
+      };
+
+      dc.onclose = () => {
+        setInfo('Data channel closed.', true);
+        sendBtn.disabled = true;
+        messageInput.disabled = true;
+        fileInput.disabled = true;
+      };
+
+      dc.onerror = err => {
+        console.error('Data channel error:', err);
+        setInfo('Data channel error occurred.', true);
+      };
+
+      dc.onmessage = async e => {
+        try {
+          const data = JSON.parse(e.data);
+          const messageId = data.messageId || generateMessageId();
+          if (data.type === 'media') {
+            appendMessage(data.name, false, true, data.mediaType, data.data, messageId, 'seen', data.replyTo, data.reaction);
+            dc.send(JSON.stringify({ type: 'ack', messageId, status: 'seen' }));
+          } else if (data.type === 'text') {
+            appendMessage(data.text, false, false, '', '', messageId, 'seen', data.replyTo, data.reaction);
+            dc.send(JSON.stringify({ type: 'ack', messageId, status: 'seen' }));
+          } else if (data.type === 'ack') {
+            updateMessageStatus(data.messageId, data.status);
+            if (data.status === 'seen' && Math.random() < 0.5) { // Simulate read status
+              dc.send(JSON.stringify({ type: 'ack', messageId: data.messageId, status: 'read' }));
+              updateMessageStatus(data.messageId, 'read');
+            }
+          } else if (data.type === 'edit') {
+            editMessage(data.messageId, data.text);
+          } else if (data.type === 'react') {
+            addReaction(data.messageId, data.reaction);
+          }
+        } catch (err) {
+          appendMessage(e.data, false);
+        }
+      };
+    }
+
+    // Handle Create Offer
+    createOfferBtn.onclick = async () => {
+      try {
+        isOfferer = true;
+        createPeerConnection();
+        dc = pc.createDataChannel('chat');
+        setupDataChannel();
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        setInfo('Offer created. Waiting for remote SDP...');
+        localSDPTextarea.value = JSON.stringify(pc.localDescription);
+      } catch (err) {
+        setInfo('Error creating offer: ' + err.message, true);
+      }
+    };
+
+    // Handle Accept Remote SDP
+    acceptOfferBtn.onclick = async () => {
+      if (!remoteSDPTextarea.value) {
+        setInfo('Paste remote SDP before accepting!', true);
+        return;
+      }
+      try {
+        const remoteDesc = JSON.parse(remoteSDPTextarea.value);
+        if (!pc) createPeerConnection();
+        await pc.setRemoteDescription(remoteDesc);
+        if (remoteDesc.type === 'offer') {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          setInfo('Answer created. Share Local SDP with your peer.');
+          localSDPTextarea.value = JSON.stringify(pc.localDescription);
+        } else {
+          setInfo('Remote SDP set. If you are offerer, share your SDP now.');
+        }
+      } catch (err) {
+        setInfo('Error accepting SDP: ' + err.message, true);
+      }
+    };
+
+    // Send text message
+    chatForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (message && dc && dc.readyState === 'open') {
+        const messageId = generateMessageId();
+        const data = JSON.stringify({ type: 'text', text: message, messageId, replyTo: replyToMessageId });
+        try {
+          dc.send(data);
+          appendMessage(message, true, false, '', '', messageId, 'delivered', replyToMessageId);
+          messageInput.value = '';
+          replyToMessageId = null;
+          messageInput.placeholder = 'Type a message';
+          sendBtn.disabled = true;
+        } catch (err) {
+          setInfo('Error sending message: ' + err.message, true);
+        }
+      }
+    });
+
+    // Enable/disable send button
+    messageInput.addEventListener('input', () => {
+      sendBtn.disabled = messageInput.value.trim().length === 0;
+    });
+
+    // Send files
+    fileInput.addEventListener('change', async e => {
+      if (!dc || dc.readyState !== 'open') {
+        setInfo('Data channel not open. Cannot send files.', true);
+        fileInput.value = '';
+        return;
+      }
+      const files = e.target.files;
+      for (const file of files) {
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+          alert('Only images, videos, and audio files are allowed.');
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File size exceeds 10MB limit.');
+          continue;
+        }
+        try {
+          const base64Data = await readFileAsBase64(file);
+          const messageId = generateMessageId();
+          const data = { type: 'media', name: file.name, mediaType: file.type, data: base64Data, messageId };
+          dc.send(JSON.stringify(data));
+          appendMessage(file.name, true, true, file.type, base64Data, messageId);
+        } catch (err) {
+          alert('Failed to send file: ' + err.message);
+        }
+      }
+      fileInput.value = '';
+    });
+
+    // Helper to read file as base64
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Problem reading file'));
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Message actions handler
+    messagesDiv.addEventListener('click', e => {
+      const btn = e.target.closest('.message-actions button');
+      if (!btn) return;
+      const msgDiv = btn.closest('.message');
+      const messageId = msgDiv.dataset.messageId;
+      const message = messages.get(messageId);
+
+      if (btn.classList.contains('reply-btn')) {
+        replyToMessageId = messageId;
+        messageInput.placeholder = `Replying to: ${message.text || 'Media'}`;
+        messageInput.focus();
+      } else if (btn.classList.contains('react-btn')) {
+        const reaction = prompt('Enter reaction (e.g., 😊, 👍):');
+        if (reaction && dc && dc.readyState === 'open') {
+          dc.send(JSON.stringify({ type: 'react', messageId, reaction }));
+          addReaction(messageId, reaction);
+        }
+      } else if (btn.classList.contains('star-btn')) {
+        if (starredMessages.has(messageId)) {
+          starredMessages.delete(messageId);
+          msgDiv.classList.remove('starred');
+          btn.querySelector('i').classList.replace('fas', 'far');
+          btn.title = 'Star';
+        } else {
+          starredMessages.add(messageId);
+          msgDiv.classList.add('starred');
+          btn.querySelector('i').classList.replace('far', 'fas');
+          btn.title = 'Unstar';
+        }
+      } else if (btn.classList.contains('pin-btn')) {
+        if (pinnedMessages.has(messageId)) {
+          pinnedMessages.delete(messageId);
+          msgDiv.classList.remove('pinned');
+          btn.title = 'Pin';
+        } else {
+          pinnedMessages.add(messageId);
+          msgDiv.classList.add('pinned');
+          btn.title = 'Unpin';
+        }
+      } else if (btn.classList.contains('copy-btn')) {
+        navigator.clipboard.writeText(message.text || message.name || '')
+          .then(() => setInfo('Message copied to clipboard.'))
+          .catch(() => setInfo('Failed to copy message.', true));
+      } else if (btn.classList.contains('edit-btn') && message.fromMe) {
+        const newText = prompt('Edit message:', message.text);
+        if (newText && dc && dc.readyState === 'open') {
+          dc.send(JSON.stringify({ type: 'edit', messageId, text: newText }));
+          editMessage(messageId, newText);
+        }
+      }
+    });
+
+    // Emoji button (placeholder for emoji picker)
+    emojiBtn.addEventListener('click', () => {
+      const emoji = prompt('Enter an emoji:');
+      if (emoji) {
+        messageInput.value += emoji;
+        messageInput.focus();
+        sendBtn.disabled = messageInput.value.trim().length === 0;
+      }
+    });
+
+    // Reset reply context
+    messageInput.addEventListener('blur', () => {
+      if (replyToMessageId) {
+        replyToMessageId = null;
+        messageInput.placeholder = 'Type a message';
+      }
+    });
+
+    // Keyboard shortcuts
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendBtn.disabled) sendBtn.click();
+      }
+    });
+
+    document.getElementById('fileInputLabel').addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+  </script>
+</body>
+</html>
